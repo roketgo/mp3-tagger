@@ -38,6 +38,10 @@ Restart Nemo/Nautilus after installation if necessary.
 - Mutagen
 - Nemo or Nautilus
 
+## Source
+
+The repository contains the source components used to build the package. The main Python source and file-manager integrations are provided as gzip+Base64 text archives because the connected GitHub writer accepts UTF-8 text files. See `debian/README.source` for restoration commands.
+
 ## License
 
 MIT License
