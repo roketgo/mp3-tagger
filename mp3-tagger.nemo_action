@@ -1,0 +1,12 @@
+[Nemo Action]
+Active=true
+Name=🎵 MP3タグを編集…
+Name[ja]=🎵 MP3タグを編集…
+Name[en]=🎵 Edit MP3 Tags…
+Comment=Edit MP3 metadata, lyrics and album art
+Comment[ja]=MP3のタグ、歌詞、アルバムアートを編集します
+Comment[en]=Edit MP3 metadata, lyrics and album art
+Exec=env MP3_TAGGER_FILE_MANAGER=nemo /usr/bin/python3 /usr/share/mp3-tagger/mp3_tagger.py %F
+Icon-Name=audio-x-generic
+Selection=s
+Mimetypes=audio/mpeg;
