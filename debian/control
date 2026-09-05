@@ -1,0 +1,12 @@
+Source: mp3-tagger
+Section: sound
+Priority: optional
+Maintainer: roketgo
+Standards-Version: 4.6.0
+
+Package: mp3-tagger
+Architecture: all
+Depends: python3, python3-gi, python3-mutagen, gir1.2-gtk-3.0, python3-nautilus
+Description: MP3 tag editor for Nemo and Nautilus
+ Edit basic MP3 ID3 tags, lyrics and album art from the file manager.
+ Supports Japanese and English through gettext.
