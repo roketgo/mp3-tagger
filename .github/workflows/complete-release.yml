@@ -60,15 +60,9 @@ jobs:
             release/mp3-tagger_1.0.2-3_all.deb.part-ac.b64 \
             release/mp3-tagger_1.0.2-3_all.deb.part-ad.b64
           do
-            python3 - "$part" >> dist/mp3-tagger_1.0.2-3_all.deb <<'PY'
-import base64, re, sys
-with open(sys.argv[1], "r", encoding="utf-8") as f:
-    data = f.read()
-data = re.sub(r"[^A-Za-z0-9+/]", "", data)
-data += "=" * ((4 - len(data) % 4) % 4)
-sys.stdout.buffer.write(base64.b64decode(data, validate=False))
-PY
+            python3 -c 'import base64,re,sys; d=open(sys.argv[1],encoding="utf-8").read(); d=re.sub(r"[^A-Za-z0-9+/]", "", d); d += "="*((4-len(d)%4)%4); sys.stdout.buffer.write(base64.b64decode(d, validate=False))' "$part" >> dist/mp3-tagger_1.0.2-3_all.deb
           done
+          test "$(stat -c %s dist/mp3-tagger_1.0.2-3_all.deb)" -eq 9008
           dpkg-deb --info dist/mp3-tagger_1.0.2-3_all.deb >/dev/null
 
       - name: Commit complete source tree
