@@ -53,12 +53,23 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          cat release/mp3-tagger_1.0.2-3_all.deb.part-aa.b64 release/mp3-tagger_1.0.2-3_all.deb.part-ab.b64 release/mp3-tagger_1.0.2-3_all.deb.part-ac.b64 release/mp3-tagger_1.0.2-3_all.deb.part-ad.b64 \
-            | tr -d '\r\n[:space:]' > /tmp/mp3-tagger.deb.b64
-          n=$(wc -c < /tmp/mp3-tagger.deb.b64)
-          pad=$(( (4 - n % 4) % 4 ))
-          if [ "$pad" -gt 0 ]; then printf '%*s' "$pad" '' | tr ' ' '=' >> /tmp/mp3-tagger.deb.b64; fi
-          base64 --ignore-garbage -d /tmp/mp3-tagger.deb.b64 > dist/mp3-tagger_1.0.2-3_all.deb
+          : > dist/mp3-tagger_1.0.2-3_all.deb
+          for part in \
+            release/mp3-tagger_1.0.2-3_all.deb.part-aa.b64 \
+            release/mp3-tagger_1.0.2-3_all.deb.part-ab.b64 \
+            release/mp3-tagger_1.0.2-3_all.deb.part-ac.b64 \
+            release/mp3-tagger_1.0.2-3_all.deb.part-ad.b64
+          do
+            tmp=$(mktemp)
+            tr -d '\r\n[:space:]' < "$part" > "$tmp"
+            n=$(wc -c < "$tmp")
+            pad=$(( (4 - n % 4) % 4 ))
+            if [ "$pad" -gt 0 ]; then
+              printf '%*s' "$pad" '' | tr ' ' '=' >> "$tmp"
+            fi
+            base64 --ignore-garbage -d "$tmp" >> dist/mp3-tagger_1.0.2-3_all.deb
+            rm -f "$tmp"
+          done
           dpkg-deb --info dist/mp3-tagger_1.0.2-3_all.deb >/dev/null
 
       - name: Commit complete source tree
