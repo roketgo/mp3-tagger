@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -22,16 +22,28 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p source/locale/en/LC_MESSAGES source/locale/ja/LC_MESSAGES
-          test -s source/mp3_tagger.py.gz.b64
-          test -s source/nautilus_mp3_tagger.py.gz.b64
-          test -s source/mp3-tagger.nemo_action.gz.b64
-          test -s source/locale/en/LC_MESSAGES/mp3-tagger.mo.b64
-          test -s source/locale/ja/LC_MESSAGES/mp3-tagger.mo.b64
-          base64 -d source/mp3_tagger.py.gz.b64 | gzip -dc > source/mp3_tagger.py
-          base64 -d source/nautilus_mp3_tagger.py.gz.b64 | gzip -dc > source/nautilus_mp3_tagger.py
-          base64 -d source/mp3-tagger.nemo_action.gz.b64 | gzip -dc > source/mp3-tagger.nemo_action
-          base64 -d source/locale/en/LC_MESSAGES/mp3-tagger.mo.b64 > source/locale/en/LC_MESSAGES/mp3-tagger.mo
-          base64 -d source/locale/ja/LC_MESSAGES/mp3-tagger.mo.b64 > source/locale/ja/LC_MESSAGES/mp3-tagger.mo
+
+          decode_b64() {
+            local input="$1"
+            local output="$2"
+            tr -d '\r\n[:space:]' < "$input" > "$input.tmp"
+            local n
+            n=$(wc -c < "$input.tmp")
+            local pad=$(( (4 - n % 4) % 4 ))
+            if [ "$pad" -gt 0 ]; then printf '%*s' "$pad" '' | tr ' ' '=' >> "$input.tmp"; fi
+            base64 -d "$input.tmp" > "$output"
+            rm -f "$input.tmp"
+          }
+
+          decode_b64 source/mp3_tagger.py.gz.b64 source/mp3_tagger.py.gz
+          decode_b64 source/nautilus_mp3_tagger.py.gz.b64 source/nautilus_mp3_tagger.py.gz
+          decode_b64 source/mp3-tagger.nemo_action.gz.b64 source/mp3-tagger.nemo_action.gz
+          decode_b64 source/locale/en/LC_MESSAGES/mp3-tagger.mo.b64 source/locale/en/LC_MESSAGES/mp3-tagger.mo
+          decode_b64 source/locale/ja/LC_MESSAGES/mp3-tagger.mo.b64 source/locale/ja/LC_MESSAGES/mp3-tagger.mo
+
+          gzip -dc source/mp3_tagger.py.gz > source/mp3_tagger.py
+          gzip -dc source/nautilus_mp3_tagger.py.gz > source/nautilus_mp3_tagger.py
+          gzip -dc source/mp3-tagger.nemo_action.gz > source/mp3-tagger.nemo_action
           chmod +x source/mp3_tagger.py source/nautilus_mp3_tagger.py
           python3 -m py_compile source/mp3_tagger.py source/nautilus_mp3_tagger.py
 
@@ -40,7 +52,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          cat release/mp3-tagger_1.0.2-3_all.deb.part-aa.b64 release/mp3-tagger_1.0.2-3_all.deb.part-ab.b64 release/mp3-tagger_1.0.2-3_all.deb.part-ac.b64 release/mp3-tagger_1.0.2-3_all.deb.part-ad.b64 | base64 -d > dist/mp3-tagger_1.0.2-3_all.deb
+          cat release/mp3-tagger_1.0.2-3_all.deb.part-aa.b64 release/mp3-tagger_1.0.2-3_all.deb.part-ab.b64 release/mp3-tagger_1.0.2-3_all.deb.part-ac.b64 release/mp3-tagger_1.0.2-3_all.deb.part-ad.b64 \
+            | tr -d '\r\n[:space:]' > /tmp/mp3-tagger.deb.b64
+          n=$(wc -c < /tmp/mp3-tagger.deb.b64)
+          pad=$(( (4 - n % 4) % 4 ))
+          if [ "$pad" -gt 0 ]; then printf '%*s' "$pad" '' | tr ' ' '=' >> /tmp/mp3-tagger.deb.b64; fi
+          base64 -d /tmp/mp3-tagger.deb.b64 > dist/mp3-tagger_1.0.2-3_all.deb
           dpkg-deb --info dist/mp3-tagger_1.0.2-3_all.deb >/dev/null
 
       - name: Commit complete source tree
