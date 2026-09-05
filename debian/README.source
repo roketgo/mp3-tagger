@@ -1,0 +1,7 @@
+The release package was built from the MP3 Tag Editor sources included in this repository.
+
+The main Python source is stored as a gzip+Base64 archive under source/ because the connected GitHub file writer accepts UTF-8 text files. To restore it locally:
+
+  base64 -d source/mp3_tagger.py.gz.b64 | gzip -dc > mp3_tagger.py
+
+The Nautilus and Nemo integration sources can be restored in the same way from their corresponding files under source/.
