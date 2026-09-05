@@ -1,9 +1,9 @@
 name: Complete source and release
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,11 +17,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Restore exact source files from DEB payload
+      - name: Restore exact source files
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p source/locale/en/LC_MESSAGES source/locale/ja/LC_MESSAGES
+          mkdir -p source
 
           decode_b64() {
             local input="$1"
@@ -30,20 +30,21 @@ jobs:
             local n
             n=$(wc -c < "$input.tmp")
             local pad=$(( (4 - n % 4) % 4 ))
-            if [ "$pad" -gt 0 ]; then printf '%*s' "$pad" '' | tr ' ' '=' >> "$input.tmp"; fi
-            base64 -d "$input.tmp" > "$output"
+            if [ "$pad" -gt 0 ]; then
+              printf '%*s' "$pad" '' | tr ' ' '=' >> "$input.tmp"
+            fi
+            base64 --ignore-garbage -d "$input.tmp" > "$output"
             rm -f "$input.tmp"
           }
 
           decode_b64 source/mp3_tagger.py.gz.b64 source/mp3_tagger.py.gz
           decode_b64 source/nautilus_mp3_tagger.py.gz.b64 source/nautilus_mp3_tagger.py.gz
           decode_b64 source/mp3-tagger.nemo_action.gz.b64 source/mp3-tagger.nemo_action.gz
-          decode_b64 source/locale/en/LC_MESSAGES/mp3-tagger.mo.b64 source/locale/en/LC_MESSAGES/mp3-tagger.mo
-          decode_b64 source/locale/ja/LC_MESSAGES/mp3-tagger.mo.b64 source/locale/ja/LC_MESSAGES/mp3-tagger.mo
 
           gzip -dc source/mp3_tagger.py.gz > source/mp3_tagger.py
           gzip -dc source/nautilus_mp3_tagger.py.gz > source/nautilus_mp3_tagger.py
           gzip -dc source/mp3-tagger.nemo_action.gz > source/mp3-tagger.nemo_action
+
           chmod +x source/mp3_tagger.py source/nautilus_mp3_tagger.py
           python3 -m py_compile source/mp3_tagger.py source/nautilus_mp3_tagger.py
 
@@ -57,7 +58,7 @@ jobs:
           n=$(wc -c < /tmp/mp3-tagger.deb.b64)
           pad=$(( (4 - n % 4) % 4 ))
           if [ "$pad" -gt 0 ]; then printf '%*s' "$pad" '' | tr ' ' '=' >> /tmp/mp3-tagger.deb.b64; fi
-          base64 -d /tmp/mp3-tagger.deb.b64 > dist/mp3-tagger_1.0.2-3_all.deb
+          base64 --ignore-garbage -d /tmp/mp3-tagger.deb.b64 > dist/mp3-tagger_1.0.2-3_all.deb
           dpkg-deb --info dist/mp3-tagger_1.0.2-3_all.deb >/dev/null
 
       - name: Commit complete source tree
@@ -66,7 +67,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add source/mp3_tagger.py source/nautilus_mp3_tagger.py source/mp3-tagger.nemo_action source/locale/en/LC_MESSAGES/mp3-tagger.mo source/locale/ja/LC_MESSAGES/mp3-tagger.mo
+          git add source/mp3_tagger.py source/nautilus_mp3_tagger.py source/mp3-tagger.nemo_action
           if ! git diff --cached --quiet; then
             git commit -m "Restore complete v1.0.2 source files"
             git push origin HEAD:main
@@ -81,5 +82,5 @@ jobs:
           if gh release view v1.0.2 >/dev/null 2>&1; then
             gh release upload v1.0.2 dist/mp3-tagger_1.0.2-3_all.deb --clobber
           else
-            gh release create v1.0.2 dist/mp3-tagger_1.0.2-3_all.deb --target main --title "v1.0.2" --notes "MP3 Tag Editor for Nemo and Nautilus — v1.0.2\n\n🖖 Live long and prosper."
+            gh release create v1.0.2 dist/mp3-tagger_1.0.2-3_all.deb --target main --title "v1.0.2" --notes $'MP3 Tag Editor for Nemo and Nautilus — v1.0.2\n\n🖖 Live long and prosper.'
           fi
